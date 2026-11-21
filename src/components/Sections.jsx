@@ -5,7 +5,7 @@ export function Hero() {
   return (
     <header className="border-4 border-white-hot bg-char">
       <div className="flex items-stretch justify-between border-b-4 border-white-hot text-xs tracking-widest uppercase">
-        <div className="px-4 py-3">CS 375 · explainer</div>
+        <div className="px-4 py-3">CS 375 · Joseph Juchniewicz</div>
         <div className="bg-arc px-4 py-3 font-medium text-char">
           Feature lifting
         </div>

@@ -2,10 +2,10 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import LazyPlot from "./LazyPlot";
 import Plane2D from "./Plane2D";
 import { COLORS, baseLayout, axis3d, plotConfig, plotStyle } from "./plotTheme";
-import { pointTrace, flatSurface } from "./plotHelpers";
+import { pointTrace, flatSurface, wrongTrace3d } from "./plotHelpers";
 import { Panel, Btn, Slider } from "./ui";
 import { generateDataset } from "../lib/datasets";
-import { accuracy, gridScores } from "../lib/classify";
+import { accuracy, gridScores, wrongPoints } from "../lib/classify";
 
 const Z_HI = 4.2;
 const SURF_N = 30;
@@ -79,9 +79,19 @@ export default function GuidedLift() {
     );
   }, [ds, height]);
 
+  const wrong3d = useMemo(() => {
+    const pl = { a: 0, b: 0, c: height };
+    const o = accuracy(ds.all, fn3d, pl).orientation;
+    return wrongTrace3d(wrongPoints(ds.all, fn3d, pl, o), fn3d);
+  }, [ds, fn3d, height]);
+
   const right = useMemo(
-    () => [dataSurface, planeTrace, ...points3d],
-    [dataSurface, planeTrace, points3d],
+    () => [dataSurface, planeTrace, ...points3d, wrong3d],
+    [dataSurface, planeTrace, points3d, wrong3d],
+  );
+  const nWrong = useMemo(
+    () => wrongPoints(ds.all, fnNow, planeNow, acc.orientation).length,
+    [ds, fnNow, planeNow, acc],
   );
 
   const radius = lambda > 0.001 && c > 0 ? Math.sqrt(c / lambda) : null;
@@ -172,6 +182,9 @@ export default function GuidedLift() {
             Accuracy
           </div>
           <div className="text-5xl font-medium text-arc">{pct(acc.best)}</div>
+          <div className="mt-1 text-xs tracking-wide text-arc">
+            {nWrong} wrong · boxed in yellow
+          </div>
           <div className="mt-2 text-xs tracking-wide">
             {acc.orientation === 1
               ? "Above the plane = class 1 (red)."

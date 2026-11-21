@@ -1,6 +1,6 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { COLORS } from "./plotTheme";
-import { planeScore } from "../lib/classify";
+import { planeScore, wrongPoints } from "../lib/classify";
 
 const H = 480;
 const MARGIN = 40;
@@ -139,6 +139,20 @@ function Plane2D({ domain, points, testPoints, fn, plane }) {
       ctx.fillStyle = p.y === 1 ? COLORS.ember : COLORS.hot;
       ctx.fillRect(sx(p.x1) - 3.5, sy(p.x2) - 3.5, 7, 7);
     }
+
+    // Side assignment matches the accuracy readout: whichever gives >= 50%.
+    let right = 0;
+    for (const q of points)
+      if ((planeScore(fn, plane, q.x1, q.x2) > 0 ? 1 : 0) === q.y) right++;
+    const orientation = right / points.length >= 0.5 ? 1 : -1;
+    ctx.strokeStyle = COLORS.arc;
+    ctx.lineWidth = 2;
+    const boxed = wrongPoints(points, fn, plane, orientation);
+    const boxedTest = testPoints
+      ? wrongPoints(testPoints, fn, plane, orientation)
+      : [];
+    for (const q of boxed.concat(boxedTest))
+      ctx.strokeRect(sx(q.x1) - 8, sy(q.x2) - 8, 16, 16);
     if (testPoints) {
       ctx.lineWidth = 2;
       for (const p of testPoints) {

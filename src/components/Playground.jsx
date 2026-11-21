@@ -2,11 +2,11 @@ import { useDeferredValue, useMemo, useState } from "react";
 import LazyPlot from "./LazyPlot";
 import Plane2D from "./Plane2D";
 import { COLORS, baseLayout, axis3d, plotConfig, plotStyle } from "./plotTheme";
-import { pointTrace, flatSurface } from "./plotHelpers";
+import { pointTrace, flatSurface, wrongTrace3d } from "./plotHelpers";
 import { Panel, Btn, Slider } from "./ui";
 import { DATASETS, generateDataset } from "../lib/datasets";
 import { FEATURES, getFeature, safeFn, zRange } from "../lib/features";
-import { accuracy, autoFit, gridScores } from "../lib/classify";
+import { accuracy, autoFit, gridScores, wrongPoints } from "../lib/classify";
 
 const TIPS = {
   rings:
@@ -114,9 +114,21 @@ export default function Playground() {
     [ds, fn, showTest],
   );
 
+  const wrong3d = useMemo(() => {
+    const o = accuracy(ds.train, fn, live).orientation;
+    const bad = wrongPoints(ds.train, fn, live, o).concat(
+      showTest ? wrongPoints(ds.test, fn, live, o) : [],
+    );
+    return wrongTrace3d(bad, fn);
+  }, [ds, fn, live, showTest]);
+
   const right = useMemo(
-    () => [dataSurface, planeTrace, ...points3d],
-    [dataSurface, planeTrace, points3d],
+    () => [dataSurface, planeTrace, ...points3d, wrong3d],
+    [dataSurface, planeTrace, points3d, wrong3d],
+  );
+  const nWrong = useMemo(
+    () => wrongPoints(ds.train, fn, plane, trainAcc.orientation).length,
+    [ds, fn, plane, trainAcc],
   );
 
   const rightLayout = useMemo(
@@ -244,6 +256,9 @@ export default function Playground() {
             </div>
             <div className="text-5xl font-medium text-arc">
               {pct(trainAcc.best)}
+            </div>
+            <div className="mt-1 text-xs tracking-wide text-arc">
+              {nWrong} wrong · boxed in yellow
             </div>
             <div className="mt-2 text-xs tracking-wide">
               {trainAcc.orientation === 1

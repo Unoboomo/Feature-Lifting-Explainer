@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Plane2D from "./Plane2D";
 import { Panel, Btn, Slider } from "./ui";
 import { generateDataset } from "../lib/datasets";
-import { bestLine, lineAccuracy } from "../lib/classify";
+import { bestLine, lineAccuracy, wrongPoints } from "../lib/classify";
 
 const zero = () => 0;
 const pct = (v) => `${(v * 100).toFixed(1)}%`;
@@ -24,6 +24,11 @@ export default function Stalemate() {
     [deg, t],
   );
   const acc = useMemo(() => lineAccuracy(ds.all, deg * RAD, t), [ds, deg, t]);
+
+  const nWrong = useMemo(
+    () => wrongPoints(ds.all, zero, plane, acc.orientation).length,
+    [ds, plane, acc],
+  );
 
   function findBest() {
     cancelAnimationFrame(raf.current);
@@ -99,6 +104,9 @@ export default function Stalemate() {
             Accuracy
           </div>
           <div className="text-5xl font-medium text-arc">{pct(acc.best)}</div>
+          <div className="mt-1 text-xs tracking-wide text-arc">
+            {nWrong} wrong · boxed in yellow
+          </div>
           <div className="mt-2 text-xs tracking-wide">
             {acc.orientation === 1
               ? "One side of the line = class 1 (red)."

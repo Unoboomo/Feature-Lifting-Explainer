@@ -124,3 +124,13 @@ export function lineAccuracy(points, theta, t) {
     orientation: raw >= 0.5 ? 1 : -1,
   };
 }
+
+// Points the plane gets wrong, under the same side-assignment the accuracy
+// readout uses (orientation = +1: above = class 1, -1: sides swapped).
+export function wrongPoints(points, fn, plane, orientation) {
+  return points.filter((p) => {
+    const above = planeScore(fn, plane, p.x1, p.x2) > 0 ? 1 : 0;
+    const pred = orientation === 1 ? above : 1 - above;
+    return pred !== p.y;
+  });
+}

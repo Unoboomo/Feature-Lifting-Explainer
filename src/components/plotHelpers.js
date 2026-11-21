@@ -37,3 +37,22 @@ export const flatSurface = (xs, ys, z, color, opacity) => ({
     [1, color],
   ],
 });
+
+// Big hollow arc-yellow squares drawn around misclassified points in 3D.
+export function wrongTrace3d(wrong, fn) {
+  return {
+    type: "scatter3d",
+    mode: "markers",
+    hoverinfo: "skip",
+    showlegend: false,
+    x: wrong.map((p) => p.x1),
+    y: wrong.map((p) => p.x2),
+    z: wrong.map((p) => fn(p.x1, p.x2)),
+    marker: {
+      symbol: "square-open",
+      size: 8,
+      color: COLORS.arc,
+      line: { width: 3, color: COLORS.arc },
+    },
+  };
+}

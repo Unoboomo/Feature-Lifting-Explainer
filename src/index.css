@@ -1,5 +1,4 @@
 @import "tailwindcss";
-
 @theme {
   --color-char: #0e0b0a;
   --color-ash: #1b1613;
@@ -10,7 +9,6 @@
   --font-mono:
     ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
 }
-
 @layer base {
   html {
     background: var(--color-char);
@@ -20,4 +18,16 @@
   * {
     border-radius: 0;
   }
+}
+
+@keyframes loader-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+.loader-bar {
+  animation: loader-sweep 1s steps(12, end) infinite;
 }

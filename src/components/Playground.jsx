@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import Plot from "./Plot";
 import { COLORS, baseLayout, axis2d, axis3d, plotConfig } from "./plotTheme";
+import { pointTrace, flatSurface } from "./plotHelpers";
 import { Panel, Btn, Slider } from "./ui";
 import { DATASETS, generateDataset } from "../lib/datasets";
 import { FEATURES, getFeature, safeFn, zRange } from "../lib/features";
@@ -26,42 +27,6 @@ function median(arr) {
 function startPlane(ds, fn) {
   return { a: 0, b: 0, c: median(ds.all.map((p) => fn(p.x1, p.x2))) };
 }
-
-function pointTrace(pts, cls, test, dim3, fn) {
-  const sel = pts.filter((p) => p.y === cls);
-  const color = cls === 1 ? COLORS.ember : COLORS.hot;
-  const marker = {
-    symbol: test ? "square-open" : "square",
-    size: dim3 ? 3.5 : 7,
-    color,
-    line: test ? { width: 2, color } : { width: 0 },
-  };
-  const base = {
-    mode: "markers",
-    hoverinfo: "skip",
-    showlegend: false,
-    marker,
-  };
-  const x = sel.map((p) => p.x1);
-  const y = sel.map((p) => p.x2);
-  return dim3
-    ? { ...base, type: "scatter3d", x, y, z: sel.map((p) => fn(p.x1, p.x2)) }
-    : { ...base, type: "scatter", x, y };
-}
-
-const flatSurface = (xs, ys, z, color, opacity) => ({
-  type: "surface",
-  x: xs,
-  y: ys,
-  z,
-  opacity,
-  showscale: false,
-  hoverinfo: "skip",
-  colorscale: [
-    [0, color],
-    [1, color],
-  ],
-});
 
 export default function Playground() {
   const [datasetId, setDatasetId] = useState("rings");

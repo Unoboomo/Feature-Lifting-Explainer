@@ -1,9 +1,11 @@
+import GuidedLift from "./components/GuidedLift";
 import Playground from "./components/Playground";
 
 export default function App() {
   return (
     <main className="min-h-screen bg-char p-4 md:p-6">
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto flex max-w-7xl flex-col gap-10">
+        <GuidedLift />
         <Playground />
       </div>
     </main>

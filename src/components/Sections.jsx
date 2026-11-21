@@ -211,6 +211,15 @@ export function Section4Text() {
           its boundary in 2D is the two axes, x₁x₂ = 0.
         </Item>
       </ol>
+      <ol start={5} className="space-y-3">
+        <Item k="5.">
+          <b className="font-medium text-arc">Spiral.</b> Try every feature.
+          None of them works. The two arms wind around each other, so the class
+          depends on angle and radius <i>together</i>, and every simple feature
+          is blind to one of them. This is the catch with hand-crafted features,
+          and it&apos;s where Section 5 picks up.
+        </Item>
+      </ol>
       <P>
         A note on the readout: accuracy shows the better of the two ways the
         plane can assign classes, so a correct plane with its sides swapped

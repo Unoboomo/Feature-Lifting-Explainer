@@ -47,3 +47,6 @@ export const axis3d = (title, range) => ({
 });
 
 export const plotConfig = { displayModeBar: false, responsive: true };
+
+// Stable object so memoized plots don't see a "new" style every render.
+export const plotStyle = { width: "100%", height: 480 };

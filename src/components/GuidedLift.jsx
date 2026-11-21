@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import Plot from "./Plot";
-import { COLORS, baseLayout, axis2d, axis3d, plotConfig } from "./plotTheme";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import LazyPlot from "./LazyPlot";
+import Plane2D from "./Plane2D";
+import { COLORS, baseLayout, axis3d, plotConfig, plotStyle } from "./plotTheme";
 import { pointTrace, flatSurface } from "./plotHelpers";
 import { Panel, Btn, Slider } from "./ui";
 import { generateDataset } from "../lib/datasets";
 import { accuracy, gridScores } from "../lib/classify";
 
 const Z_HI = 4.2;
+const SURF_N = 30;
 const pct = (v) => `${(v * 100).toFixed(1)}%`;
 
 export default function GuidedLift() {
@@ -16,8 +18,15 @@ export default function GuidedLift() {
   const raf = useRef(0);
 
   const ds = useMemo(() => generateDataset("rings"), []);
-  const fn = useMemo(() => (x1, x2) => lambda * (x1 * x1 + x2 * x2), [lambda]);
-  const plane = useMemo(() => ({ a: 0, b: 0, c }), [c]);
+  // 2D canvas + readouts use the live values; the 3D scene follows deferred copies.
+  const lam = useDeferredValue(lambda);
+  const height = useDeferredValue(c);
+  const fnNow = useMemo(
+    () => (x1, x2) => lambda * (x1 * x1 + x2 * x2),
+    [lambda],
+  );
+  const planeNow = useMemo(() => ({ a: 0, b: 0, c }), [c]);
+  const fn3d = useMemo(() => (x1, x2) => lam * (x1 * x1 + x2 * x2), [lam]);
 
   useEffect(() => () => cancelAnimationFrame(raf.current), []);
 
@@ -39,75 +48,59 @@ export default function GuidedLift() {
     raf.current = requestAnimationFrame(step);
   }
 
-  const acc = useMemo(() => accuracy(ds.all, fn, plane), [ds, fn, plane]);
-  const grid = useMemo(
-    () => gridScores(fn, plane, ds.domain, 90),
-    [fn, plane, ds],
+  const acc = useMemo(
+    () => accuracy(ds.all, fnNow, planeNow),
+    [ds, fnNow, planeNow],
   );
-  const surf = useMemo(
-    () => gridScores(fn, { a: 0, b: 0, c: 0 }, ds.domain, 36),
-    [fn, ds],
+
+  const points3d = useMemo(
+    () => [
+      pointTrace(ds.all, 0, false, true, fn3d),
+      pointTrace(ds.all, 1, false, true, fn3d),
+    ],
+    [ds, fn3d],
   );
-  const planeZ = useMemo(
-    () => surf.ys.map(() => surf.xs.map(() => c)),
-    [surf, c],
+  const dataSurface = useMemo(() => {
+    const sg = gridScores(fn3d, { a: 0, b: 0, c: 0 }, ds.domain, SURF_N);
+    return flatSurface(sg.xs, sg.ys, sg.z, COLORS.flame, 0.22);
+  }, [fn3d, ds]);
+  const planeTrace = useMemo(() => {
+    const [x0, x1] = ds.domain.x1;
+    const [y0, y1] = ds.domain.x2;
+    return flatSurface(
+      [x0, x1],
+      [y0, y1],
+      [
+        [height, height],
+        [height, height],
+      ],
+      COLORS.arc,
+      0.5,
+    );
+  }, [ds, height]);
+
+  const right = useMemo(
+    () => [dataSurface, planeTrace, ...points3d],
+    [dataSurface, planeTrace, points3d],
   );
 
   const radius = lambda > 0.001 && c > 0 ? Math.sqrt(c / lambda) : null;
 
-  const left = [
-    {
-      type: "heatmap",
-      x: grid.xs,
-      y: grid.ys,
-      z: grid.z.map((row) => row.map((v) => (v * acc.orientation > 0 ? 1 : 0))),
-      zmin: 0,
-      zmax: 1,
-      showscale: false,
-      hoverinfo: "skip",
-      colorscale: [
-        [0, "rgba(255,246,214,0.07)"],
-        [1, "rgba(215,38,11,0.24)"],
-      ],
-    },
-    {
-      type: "contour",
-      x: grid.xs,
-      y: grid.ys,
-      z: grid.z,
-      showscale: false,
-      hoverinfo: "skip",
-      contours: { start: 0, end: 0, size: 1, coloring: "none" },
-      line: { color: COLORS.arc, width: 4 },
-    },
-    pointTrace(ds.all, 0, false, false),
-    pointTrace(ds.all, 1, false, false),
-  ];
-
-  const right = [
-    flatSurface(surf.xs, surf.ys, surf.z, COLORS.flame, 0.22),
-    flatSurface(surf.xs, surf.ys, planeZ, COLORS.arc, 0.5),
-    pointTrace(ds.all, 0, false, true, fn),
-    pointTrace(ds.all, 1, false, true, fn),
-  ];
-
-  const leftLayout = {
-    ...baseLayout,
-    xaxis: axis2d("x₁", ds.domain.x1),
-    yaxis: axis2d("x₂", ds.domain.x2, { scaleanchor: "x", scaleratio: 1 }),
-  };
-  const rightLayout = {
-    ...baseLayout,
-    margin: { l: 0, r: 0, t: 0, b: 0 },
-    scene: {
-      xaxis: axis3d("x₁", ds.domain.x1),
-      yaxis: axis3d("x₂", ds.domain.x2),
-      zaxis: axis3d("z", [0, Z_HI]),
-      aspectmode: "manual",
-      aspectratio: { x: 1, y: 1, z: 0.8 },
-      camera: { eye: { x: 1.7, y: -1.7, z: 0.9 } },
-    },
-  };
+  const rightLayout = useMemo(
+    () => ({
+      ...baseLayout,
+      margin: { l: 0, r: 0, t: 0, b: 0 },
+      scene: {
+        xaxis: axis3d("x₁", ds.domain.x1),
+        yaxis: axis3d("x₂", ds.domain.x2),
+        zaxis: axis3d("z", [0, Z_HI]),
+        aspectmode: "manual",
+        aspectratio: { x: 1, y: 1, z: 0.8 },
+        camera: { eye: { x: 1.7, y: -1.7, z: 0.9 } },
+      },
+    }),
+    [ds],
+  );
 
   let caption;
   if (lambda < 0.05)
@@ -124,24 +117,24 @@ export default function GuidedLift() {
           <div className="border-b-4 border-white-hot px-4 py-2 text-xs tracking-widest uppercase">
             2D input space · circle where plane meets surface
           </div>
-          <Plot
-            data={left}
-            layout={leftLayout}
-            config={plotConfig}
-            useResizeHandler
-            style={{ width: "100%", height: 480 }}
+          <Plane2D
+            domain={ds.domain}
+            points={ds.all}
+            testPoints={null}
+            fn={fnNow}
+            plane={planeNow}
           />
         </div>
         <div>
           <div className="border-b-4 border-white-hot px-4 py-2 text-xs tracking-widest uppercase">
             3D lifted space · z = λ·(x₁² + x₂²)
           </div>
-          <Plot
+          <LazyPlot
             data={right}
             layout={rightLayout}
             config={plotConfig}
             useResizeHandler
-            style={{ width: "100%", height: 480 }}
+            style={plotStyle}
           />
         </div>
       </div>

@@ -214,7 +214,7 @@ export function Section4Text() {
       <ol start={5} className="space-y-3">
         <Item k="5.">
           <b className="font-medium text-arc">Spiral.</b> Try every feature.
-          None of them works. The two arms wind around each other, so the class
+          None of them work. The two arms wind around each other, so the class
           depends on angle and radius <i>together</i>, and every simple feature
           is blind to one of them. This is the catch with hand-crafted features,
           and it&apos;s where Section 5 picks up.

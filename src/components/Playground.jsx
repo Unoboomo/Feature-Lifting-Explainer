@@ -16,7 +16,7 @@ const TIPS = {
   stripes:
     "Radius ignores the stripe direction. Try a feature that only looks at x₁.",
   spiral:
-    "Try every feature. None of them works, because the classes depend on angle and radius together. Lifting only helps when you can find the right feature.",
+    "Try every feature. None of them work, because the classes depend on angle and radius together. Lifting only helps when you can find the right feature.",
   xor: "No line separates opposite quadrants, and squares are blind to sign combinations. Try a feature that mixes x₁ and x₂.",
 };
 
